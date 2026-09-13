@@ -1,0 +1,25 @@
+# Configuración para desplegar en Render.com
+# Al conectar el repo, Render leerá este archivo.
+# Las variables secretas se configuran en el panel de Render (no aquí).
+services:
+  - type: web
+    name: prestamos
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: ADMIN_USUARIO
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: CODIGO_PAIS
+        value: "593"

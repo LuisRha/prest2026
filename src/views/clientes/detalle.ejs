@@ -1,0 +1,65 @@
+<%- include('../partials/header', { titulo: cliente.nombre }) %>
+
+<div class="cabecera-seccion">
+  <h1><%= cliente.nombre %></h1>
+  <a href="/clientes" class="btn">← Volver</a>
+</div>
+
+<div class="ficha">
+  <p><strong>WhatsApp:</strong> <%= cliente.telefono %></p>
+  <% if (cliente.correo) { %><p><strong>Correo:</strong> <%= cliente.correo %></p><% } %>
+  <p><strong>Dirección:</strong> <%= cliente.direccion || '—' %></p>
+  <p><strong>Notas:</strong> <%= cliente.notas || '—' %></p>
+  <div class="acciones">
+    <a href="/clientes/<%= cliente.id %>/editar" class="btn btn-sm">Editar cliente</a>
+    <a href="/prestamos/nuevo?cliente=<%= cliente.id %>" class="btn btn-sm btn-primario">+ Nuevo préstamo</a>
+  </div>
+</div>
+
+<h2>Préstamos de este cliente</h2>
+
+<% if (prestamos.length === 0) { %>
+  <p class="vacio">Este cliente no tiene préstamos registrados.</p>
+<% } else { %>
+<div class="tabla-scroll">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Monto</th>
+        <th>Interés/mes</th>
+        <th>Mora/día</th>
+        <th>Mora acum.</th>
+        <th>Total a pagar</th>
+        <th>Vence</th>
+        <th>Situación</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% prestamos.forEach(function(p) { %>
+      <tr>
+        <td><%= formatoDinero(p.calculo.monto) %></td>
+        <td><%= p.interes_mensual %>%</td>
+        <td><%= p.calculo.moraDiaria %>%</td>
+        <td>
+          <%= formatoDinero(p.calculo.mora) %>
+          <% if (p.calculo.diasAtraso > 0) { %><br><small class="ayuda"><%= p.calculo.diasAtraso %> día(s)</small><% } %>
+        </td>
+        <td><strong><%= formatoDinero(p.calculo.totalAPagar) %></strong></td>
+        <td><%= p.fecha_caducidad %></td>
+        <td>
+          <span class="badge badge-<%= p.venc.clase %>"><%= p.venc.textoEstado %></span>
+          <% if (p.estado !== 'activo') { %><br><small class="ayuda"><%= p.estado %></small><% } %>
+        </td>
+        <td class="acciones">
+          <a href="<%= p.wa %>" target="_blank" class="btn btn-sm btn-whatsapp">📱</a>
+          <a href="/prestamos/<%= p.id %>/editar" class="btn btn-sm">Editar</a>
+        </td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+
+<%- include('../partials/footer') %>

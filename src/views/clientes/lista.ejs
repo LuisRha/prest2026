@@ -1,0 +1,41 @@
+<%- include('../partials/header', { titulo: 'Clientes' }) %>
+
+<div class="cabecera-seccion">
+  <h1>Clientes</h1>
+  <a href="/clientes/nuevo" class="btn btn-primario">+ Nuevo cliente</a>
+</div>
+
+<% if (clientes.length === 0) { %>
+  <p class="vacio">Aún no tienes clientes. Agrega el primero.</p>
+<% } else { %>
+<div class="tabla-scroll">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Teléfono</th>
+        <th>Dirección</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% clientes.forEach(function(c) { %>
+      <tr>
+        <td><a href="/clientes/<%= c.id %>"><%= c.nombre %></a></td>
+        <td><%= c.telefono %></td>
+        <td><%= c.direccion || '—' %></td>
+        <td class="acciones">
+          <a href="/clientes/<%= c.id %>" class="btn btn-sm">Ver</a>
+          <a href="/clientes/<%= c.id %>/editar" class="btn btn-sm">Editar</a>
+          <form action="/clientes/<%= c.id %>/eliminar" method="POST" onsubmit="return confirm('¿Eliminar este cliente y todos sus préstamos?');">
+            <button type="submit" class="btn btn-sm btn-peligro">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+
+<%- include('../partials/footer') %>

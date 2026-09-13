@@ -1,0 +1,65 @@
+<%- include('../partials/header', { titulo: 'Préstamos' }) %>
+
+<div class="cabecera-seccion">
+  <h1>Préstamos</h1>
+  <a href="/prestamos/nuevo" class="btn btn-primario">+ Nuevo préstamo</a>
+</div>
+
+<% if (prestamos.length === 0) { %>
+  <p class="vacio">Aún no hay préstamos registrados.</p>
+<% } else { %>
+<div class="tabla-scroll">
+  <table class="tabla tabla-compacta">
+    <thead>
+      <tr>
+        <th>Cliente</th>
+        <th>Monto</th>
+        <th>Int.</th>
+        <th>Mora</th>
+        <th>Interés</th>
+        <th>Mora ac.</th>
+        <th>Total</th>
+        <th>Vence</th>
+        <th>Situación</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% prestamos.forEach(function(p) { %>
+      <tr>
+        <td class="col-cliente"><a href="/clientes/<%= p.cliente.id %>" title="<%= p.cliente.nombre %>"><%= p.cliente.nombre %></a></td>
+        <td><%= formatoDinero(p.calculo.monto) %></td>
+        <td><%= p.interes_mensual %>%</td>
+        <td><%= p.calculo.moraDiaria %>%</td>
+        <td><%= formatoDinero(p.calculo.interesNormal) %></td>
+        <td>
+          <%= formatoDinero(p.calculo.mora) %>
+          <% if (p.calculo.diasAtraso > 0) { %><br><small class="ayuda"><%= p.calculo.diasAtraso %>d</small><% } %>
+        </td>
+        <td><strong><%= formatoDinero(p.calculo.totalAPagar) %></strong></td>
+        <td><%= p.fecha_caducidad %></td>
+        <td>
+          <span class="badge badge-<%= p.venc.clase %>"><%= p.venc.textoEstado %></span>
+          <% if (p.estado !== 'activo') { %><br><small class="ayuda"><%= p.estado %></small><% } %>
+        </td>
+        <td class="acciones">
+          <a href="<%= p.wa %>" target="_blank" class="btn btn-sm btn-whatsapp" title="Enviar WhatsApp">📱</a>
+          <a href="/prestamos/<%= p.id %>/editar" class="btn btn-sm" title="Editar">✏️</a>
+          <% if (p.estado === 'activo') { %>
+          <form action="/prestamos/<%= p.id %>/estado" method="POST">
+            <input type="hidden" name="estado" value="pagado" />
+            <button type="submit" class="btn btn-sm btn-ok" title="Marcar como pagado">✓</button>
+          </form>
+          <% } %>
+          <form action="/prestamos/<%= p.id %>/eliminar" method="POST" onsubmit="return confirm('¿Eliminar este préstamo?');">
+            <button type="submit" class="btn btn-sm btn-peligro" title="Eliminar">🗑</button>
+          </form>
+        </td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+
+<%- include('../partials/footer') %>

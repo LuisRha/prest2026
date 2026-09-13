@@ -1,0 +1,29 @@
+<%- include('../partials/header', { titulo: cliente ? 'Editar cliente' : 'Nuevo cliente' }) %>
+
+<div class="cabecera-seccion">
+  <h1><%= cliente && cliente.id ? 'Editar cliente' : 'Nuevo cliente' %></h1>
+  <a href="/clientes" class="btn">← Volver</a>
+</div>
+
+<% if (error) { %>
+  <div class="alerta alerta-error"><%= error %></div>
+<% } %>
+
+<form action="<%= cliente && cliente.id ? '/clientes/' + cliente.id + '/editar' : '/clientes/nuevo' %>" method="POST" class="form form-ancho">
+  <label>Nombre completo *</label>
+  <input type="text" name="nombre" value="<%= cliente ? (cliente.nombre || '') : '' %>" required />
+
+  <label>Teléfono (con código de país, ej: 593987654321) *</label>
+  <input type="text" name="telefono" value="<%= cliente ? (cliente.telefono || '') : '' %>" required />
+  <small class="ayuda">Sin espacios ni signos. Es el número para enviar WhatsApp.</small>
+
+  <label>Dirección</label>
+  <input type="text" name="direccion" value="<%= cliente ? (cliente.direccion || '') : '' %>" />
+
+  <label>Notas</label>
+  <textarea name="notas" rows="3"><%= cliente ? (cliente.notas || '') : '' %></textarea>
+
+  <button type="submit" class="btn btn-primario">Guardar</button>
+</form>
+
+<%- include('../partials/footer') %>

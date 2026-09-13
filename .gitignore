@@ -1,0 +1,17 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno (¡NUNCA subir esto a internet!)
+.env
+.env.local
+.env.*.local
+# El .env.example SÍ se sube (es una plantilla sin secretos)
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema
+.DS_Store
+Thumbs.db

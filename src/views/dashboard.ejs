@@ -1,0 +1,44 @@
+<%- include('partials/header', { titulo: 'Inicio' }) %>
+
+<h1>Panel de control</h1>
+
+<div class="tarjetas">
+  <div class="tarjeta">
+    <div class="tarjeta-num"><%= totalClientes %></div>
+    <div class="tarjeta-lbl">Clientes</div>
+  </div>
+  <div class="tarjeta">
+    <div class="tarjeta-num"><%= totalActivos %></div>
+    <div class="tarjeta-lbl">Préstamos activos</div>
+  </div>
+  <div class="tarjeta">
+    <div class="tarjeta-num"><%= formatoDinero(capitalPrestado) %></div>
+    <div class="tarjeta-lbl">Capital prestado</div>
+  </div>
+  <div class="tarjeta tarjeta-verde">
+    <div class="tarjeta-num"><%= formatoDinero(totalPorCobrar) %></div>
+    <div class="tarjeta-lbl">Total por cobrar</div>
+  </div>
+</div>
+
+<!-- VENCIDOS -->
+<section class="bloque">
+  <h2 class="titulo-alerta rojo">⚠️ Préstamos vencidos (<%= vencidos.length %>)</h2>
+  <% if (vencidos.length === 0) { %>
+    <p class="vacio">No hay préstamos vencidos. 🎉</p>
+  <% } else { %>
+    <%- include('partials/tabla_alertas', { lista: vencidos }) %>
+  <% } %>
+</section>
+
+<!-- POR VENCER -->
+<section class="bloque">
+  <h2 class="titulo-alerta naranja">🔔 Por vencer pronto (<%= porVencer.length %>)</h2>
+  <% if (porVencer.length === 0) { %>
+    <p class="vacio">No hay préstamos próximos a vencer.</p>
+  <% } else { %>
+    <%- include('partials/tabla_alertas', { lista: porVencer }) %>
+  <% } %>
+</section>
+
+<%- include('partials/footer') %>

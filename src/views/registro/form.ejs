@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registro de cliente</title>
+  <link rel="stylesheet" href="/css/estilos.css" />
+</head>
+<body>
+<main class="contenedor">
+  <div class="login-caja login-ancho">
+    <h1>📝 Registro</h1>
+    <p class="subtitulo">Completa tus datos para solicitar el crédito. Todos los campos son obligatorios.</p>
+
+    <form action="/registro/<%= token %>" method="POST" class="form" id="formRegistro" novalidate>
+
+      <label>Nombres (tus dos nombres) *</label>
+      <input type="text" name="nombres" id="nombres" value="<%= datos.nombres || '' %>" required />
+      <% if (errores.nombres) { %><small class="error-campo"><%= errores.nombres %></small><% } %>
+
+      <label>Apellidos (tus dos apellidos) *</label>
+      <input type="text" name="apellidos" id="apellidos" value="<%= datos.apellidos || '' %>" required />
+      <% if (errores.apellidos) { %><small class="error-campo"><%= errores.apellidos %></small><% } %>
+
+      <label>WhatsApp (con código de país, solo números) *</label>
+      <input type="text" name="whatsapp" id="whatsapp" inputmode="numeric" value="<%= datos.whatsapp || '' %>" placeholder="593987654321" required />
+      <% if (errores.whatsapp) { %><small class="error-campo"><%= errores.whatsapp %></small><% } %>
+
+      <label>Correo electrónico *</label>
+      <input type="email" name="correo" id="correo" value="<%= datos.correo || '' %>" placeholder="nombre@correo.com" required />
+      <% if (errores.correo) { %><small class="error-campo"><%= errores.correo %></small><% } %>
+
+      <label>Dirección *</label>
+      <input type="text" name="direccion" id="direccion" value="<%= datos.direccion || '' %>" required />
+      <% if (errores.direccion) { %><small class="error-campo"><%= errores.direccion %></small><% } %>
+
+      <button type="submit" class="btn btn-primario btn-bloque">Registrarme</button>
+    </form>
+  </div>
+</main>
+
+<script>
+  // Validación en vivo (además de la del servidor)
+  const soloLetras = (v) => v.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü ]/g, '');
+  const soloDigitos = (v) => v.replace(/\D/g, '');
+  const dirSegura = (v) => v.replace(/[<>{}\[\]|\\`^~]/g, '');
+
+  const $nombres = document.getElementById('nombres');
+  const $apellidos = document.getElementById('apellidos');
+  const $whatsapp = document.getElementById('whatsapp');
+  const $direccion = document.getElementById('direccion');
+
+  $nombres.addEventListener('input', () => { $nombres.value = soloLetras($nombres.value); });
+  $apellidos.addEventListener('input', () => { $apellidos.value = soloLetras($apellidos.value); });
+  $whatsapp.addEventListener('input', () => { $whatsapp.value = soloDigitos($whatsapp.value); });
+  $direccion.addEventListener('input', () => { $direccion.value = dirSegura($direccion.value); });
+</script>
+</body>
+</html>

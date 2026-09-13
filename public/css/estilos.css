@@ -1,0 +1,312 @@
+:root {
+  --azul: #2563eb;
+  --azul-oscuro: #1e40af;
+  --verde: #16a34a;
+  --verde-wa: #25d366;
+  --rojo: #dc2626;
+  --naranja: #ea580c;
+  --gris: #64748b;
+  --gris-claro: #f1f5f9;
+  --borde: #e2e8f0;
+  --texto: #1e293b;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f8fafc;
+  color: var(--texto);
+  line-height: 1.5;
+}
+
+/* ===== NAVBAR ===== */
+.navbar {
+  background: var(--azul);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.nav-marca { font-weight: 700; font-size: 1.2rem; }
+.nav-links { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.nav-links a { color: #fff; text-decoration: none; font-weight: 500; }
+.nav-links a:hover { text-decoration: underline; }
+.nav-logout { margin: 0; }
+.btn-link {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: #fff;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.btn-link:hover { background: rgba(255,255,255,0.35); }
+
+/* ===== CONTENEDOR ===== */
+.contenedor {
+  max-width: 100%;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1.2rem;
+}
+h1 { font-size: 1.6rem; margin-top: 0; }
+h2 { font-size: 1.25rem; }
+
+.cabecera-seccion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+/* ===== TARJETAS ===== */
+.tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.tarjeta {
+  background: #fff;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 1.2rem;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.tarjeta-verde { background: #f0fdf4; border-color: #bbf7d0; }
+.tarjeta-num { font-size: 1.6rem; font-weight: 700; color: var(--azul); }
+.tarjeta-verde .tarjeta-num { color: var(--verde); }
+.tarjeta-lbl { color: var(--gris); font-size: 0.85rem; margin-top: 0.3rem; }
+
+/* ===== BLOQUES ===== */
+.bloque {
+  background: #fff;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+.titulo-alerta { margin-top: 0; }
+.titulo-alerta.rojo { color: var(--rojo); }
+.titulo-alerta.naranja { color: var(--naranja); }
+.vacio { color: var(--gris); font-style: italic; }
+
+/* ===== TABLAS ===== */
+.tabla-scroll { overflow-x: auto; width: 100%; }
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  font-size: 0.92rem;
+}
+.tabla th, .tabla td {
+  padding: 0.7rem 0.6rem;
+  text-align: left;
+  border-bottom: 1px solid var(--borde);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* Tabla compacta: aprovecha el ancho y comprime columnas */
+.tabla-compacta { table-layout: auto; }
+.tabla-compacta th, .tabla-compacta td {
+  padding: 0.6rem 0.45rem;
+  font-size: 0.88rem;
+}
+/* Columna de cliente: se corta con puntos suspensivos si es muy larga */
+.col-cliente {
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.col-cliente a { display: block; overflow: hidden; text-overflow: ellipsis; }
+/* Acciones más juntas */
+.tabla-compacta .acciones { gap: 0.25rem; }
+.tabla-compacta .btn-sm { padding: 0.3rem 0.45rem; }
+.tabla th { background: var(--gris-claro); font-weight: 600; }
+.tabla a { color: var(--azul); text-decoration: none; }
+.tabla a:hover { text-decoration: underline; }
+
+/* ===== BADGES ===== */
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.badge-vencido { background: #fee2e2; color: var(--rojo); }
+.badge-por-vencer { background: #ffedd5; color: var(--naranja); }
+.badge-al-dia { background: #dcfce7; color: var(--verde); }
+.badge-estado-activo { background: #dbeafe; color: var(--azul-oscuro); }
+.badge-estado-pagado { background: #dcfce7; color: var(--verde); }
+.badge-estado-cancelado { background: #f1f5f9; color: var(--gris); }
+
+/* ===== BOTONES ===== */
+.btn {
+  display: inline-block;
+  padding: 0.5rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--borde);
+  background: #fff;
+  color: var(--texto);
+  text-decoration: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+.btn:hover { background: var(--gris-claro); }
+.btn-sm { padding: 0.35rem 0.6rem; font-size: 0.82rem; }
+.btn-bloque { width: 100%; }
+.btn-primario { background: var(--azul); color: #fff; border-color: var(--azul); }
+.btn-primario:hover { background: var(--azul-oscuro); }
+.btn-peligro { background: #fef2f2; color: var(--rojo); border-color: #fecaca; }
+.btn-peligro:hover { background: #fee2e2; }
+.btn-ok { background: #f0fdf4; color: var(--verde); border-color: #bbf7d0; }
+.btn-ok:hover { background: #dcfce7; }
+.btn-whatsapp { background: var(--verde-wa); color: #fff; border-color: var(--verde-wa); }
+.btn-whatsapp:hover { background: #1eb855; }
+
+.acciones { display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap; }
+.acciones form { margin: 0; }
+
+/* ===== FORMULARIOS ===== */
+.form { display: flex; flex-direction: column; gap: 0.3rem; }
+.form-ancho { max-width: 560px; }
+.form label { font-weight: 600; margin-top: 0.7rem; font-size: 0.92rem; }
+.form input, .form select, .form textarea {
+  padding: 0.6rem;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+}
+.form input:focus, .form select:focus, .form textarea:focus {
+  outline: 2px solid var(--azul);
+  border-color: var(--azul);
+}
+.form button { margin-top: 1.2rem; }
+.ayuda { color: var(--gris); font-size: 0.8rem; }
+
+/* ===== RESUMEN CÁLCULO ===== */
+.resumen-calculo {
+  background: var(--gris-claro);
+  border: 1px dashed var(--borde);
+  border-radius: 10px;
+  padding: 1rem;
+  margin-top: 1.2rem;
+}
+.resumen-calculo h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+.resumen-calculo p { margin: 0.25rem 0; }
+.verde { color: var(--verde); }
+
+/* ===== FICHA ===== */
+.ficha {
+  background: #fff;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+.ficha p { margin: 0.3rem 0; }
+
+/* ===== LOGIN ===== */
+.login-caja {
+  max-width: 380px;
+  margin: 4rem auto;
+  background: #fff;
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+.login-caja h1 { margin: 0; }
+.subtitulo { color: var(--gris); margin-top: 0.2rem; }
+.login-caja .form { text-align: left; margin-top: 1rem; }
+
+/* ===== ALERTAS ===== */
+.alerta {
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  margin: 0.8rem 0;
+}
+.alerta-error { background: #fee2e2; color: var(--rojo); border: 1px solid #fecaca; }
+
+/* ===== PIE ===== */
+.pie {
+  text-align: center;
+  color: var(--gris);
+  padding: 2rem 1rem;
+}
+
+/* ===== OPCIONES DE PLAZO ===== */
+.opciones-plazo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  background: var(--gris-claro);
+  padding: 0.8rem;
+  border-radius: 8px;
+  margin-top: 0.3rem;
+}
+.radio-linea {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  margin: 0;
+  cursor: pointer;
+}
+.radio-linea input { width: auto; }
+.atajos-dias {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+/* ===== LINKS DE REGISTRO ===== */
+.form-inline {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.form-inline input {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.55rem;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+.input-link {
+  width: 100%;
+  min-width: 220px;
+  padding: 0.4rem;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  background: var(--gris-claro);
+}
+.error-campo {
+  color: var(--rojo);
+  font-size: 0.82rem;
+  margin-bottom: 0.3rem;
+}
+.login-ancho {
+  max-width: 460px;
+  text-align: left;
+}
+.login-ancho h1, .login-ancho .subtitulo { text-align: center; }

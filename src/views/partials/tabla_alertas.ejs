@@ -1,0 +1,28 @@
+<div class="tabla-scroll">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Cliente</th>
+        <th>Monto</th>
+        <th>Total a pagar</th>
+        <th>Vence</th>
+        <th>Situación</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% lista.forEach(function(i) { %>
+      <tr>
+        <td><a href="/clientes/<%= i.cliente.id %>"><%= i.cliente.nombre %></a></td>
+        <td><%= formatoDinero(i.calculo.monto) %></td>
+        <td><strong><%= formatoDinero(i.calculo.totalAPagar) %></strong></td>
+        <td><%= i.fecha_caducidad %></td>
+        <td><span class="badge badge-<%= i.venc.clase %>"><%= i.venc.textoEstado %></span></td>
+        <td>
+          <a href="<%= i.wa %>" target="_blank" class="btn btn-whatsapp btn-sm">📱 WhatsApp</a>
+        </td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+</div>

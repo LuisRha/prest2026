@@ -1,0 +1,22 @@
+<%- include('partials/header', { titulo: 'Iniciar sesión' }) %>
+
+<div class="login-caja">
+  <h1>💰 Préstamos</h1>
+  <p class="subtitulo">Panel de administrador</p>
+
+  <% if (error) { %>
+    <div class="alerta alerta-error"><%= error %></div>
+  <% } %>
+
+  <form action="/login" method="POST" class="form">
+    <label>Usuario</label>
+    <input type="text" name="usuario" required autofocus />
+
+    <label>Contraseña</label>
+    <input type="password" name="password" required />
+
+    <button type="submit" class="btn btn-primario btn-bloque">Entrar</button>
+  </form>
+</div>
+
+<%- include('partials/footer') %>

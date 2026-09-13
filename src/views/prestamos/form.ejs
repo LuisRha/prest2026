@@ -1,0 +1,196 @@
+<%- include('../partials/header', { titulo: prestamo ? 'Editar préstamo' : 'Nuevo préstamo' }) %>
+
+<div class="cabecera-seccion">
+  <h1><%= prestamo ? 'Editar préstamo' : 'Nuevo préstamo' %></h1>
+  <a href="/prestamos" class="btn">← Volver</a>
+</div>
+
+<% if (error) { %>
+  <div class="alerta alerta-error"><%= error %></div>
+<% } %>
+
+<% if (clientes.length === 0) { %>
+  <div class="alerta alerta-error">
+    Primero debes crear un cliente. <a href="/clientes/nuevo">Crear cliente</a>.
+  </div>
+<% } else { %>
+
+<form action="<%= prestamo ? '/prestamos/' + prestamo.id + '/editar' : '/prestamos/nuevo' %>" method="POST" class="form form-ancho" id="formPrestamo">
+  <label>Cliente *</label>
+  <select name="cliente_id" required>
+    <option value="">— Selecciona un cliente —</option>
+    <% clientes.forEach(function(c) { %>
+      <option value="<%= c.id %>" <%= String(clientePreseleccionado) === String(c.id) ? 'selected' : '' %>><%= c.nombre %></option>
+    <% }); %>
+  </select>
+
+  <label>Monto del préstamo *</label>
+  <input type="number" step="0.01" min="0" name="monto" id="monto" value="<%= prestamo ? prestamo.monto : '' %>" required />
+
+  <label>Interés mensual (%) — editable *</label>
+  <input type="number" step="0.01" min="0" name="interes_mensual" id="interes" value="<%= prestamo ? prestamo.interes_mensual : 10 %>" required />
+  <small class="ayuda">Se cobra el mes completo dentro del plazo acordado.</small>
+
+  <label>Mora diaria (%) — se cobra por cada día de atraso *</label>
+  <input type="number" step="0.01" min="0" name="mora_diaria" id="mora" value="<%= prestamo && prestamo.mora_diaria != null ? prestamo.mora_diaria : 1 %>" required />
+  <small class="ayuda">Después de la fecha de caducidad se suma este % por cada día vencido. Ponlo en 0 si no quieres cobrar mora.</small>
+
+  <label>Fecha de inicio *</label>
+  <input type="date" name="fecha_inicio" id="fechaInicio" value="<%= prestamo ? prestamo.fecha_inicio : hoy %>" required />
+
+  <!-- ===== PLAZO: por días o por fecha exacta ===== -->
+  <label>¿Para cuánto tiempo es el préstamo? *</label>
+  <div class="opciones-plazo">
+    <label class="radio-linea">
+      <input type="radio" name="modo_plazo" value="dias" id="modoDias" checked />
+      Por cantidad de días
+    </label>
+    <label class="radio-linea">
+      <input type="radio" name="modo_plazo" value="fecha" id="modoFecha" />
+      Poner fecha exacta de caducidad
+    </label>
+  </div>
+
+  <!-- Bloque: por días -->
+  <div id="bloqueDias">
+    <label>Cantidad de días</label>
+    <input type="number" step="1" min="1" name="dias" id="dias" value="30" />
+    <div class="atajos-dias">
+      <button type="button" class="btn btn-sm" data-dias="7">7 días</button>
+      <button type="button" class="btn btn-sm" data-dias="15">15 días</button>
+      <button type="button" class="btn btn-sm" data-dias="30">1 mes</button>
+      <button type="button" class="btn btn-sm" data-dias="60">2 meses</button>
+      <button type="button" class="btn btn-sm" data-dias="90">3 meses</button>
+    </div>
+  </div>
+
+  <!-- Bloque: por fecha exacta -->
+  <div id="bloqueFecha" style="display:none;">
+    <label>Fecha de caducidad</label>
+    <input type="date" name="fecha_caducidad" id="fechaCaducidad" value="<%= prestamo ? prestamo.fecha_caducidad : '' %>" />
+  </div>
+
+  <% if (prestamo) { %>
+  <label>Estado</label>
+  <select name="estado">
+    <option value="activo" <%= prestamo.estado === 'activo' ? 'selected' : '' %>>Activo</option>
+    <option value="pagado" <%= prestamo.estado === 'pagado' ? 'selected' : '' %>>Pagado</option>
+    <option value="cancelado" <%= prestamo.estado === 'cancelado' ? 'selected' : '' %>>Cancelado</option>
+  </select>
+  <% } %>
+
+  <label>Notas</label>
+  <textarea name="notas" rows="2"><%= prestamo ? (prestamo.notas || '') : '' %></textarea>
+
+  <div class="resumen-calculo" id="resumen">
+    <h3>Resumen del cálculo</h3>
+    <p>Duración: <strong id="rDias">—</strong> día(s)</p>
+    <p>Interés del mes: <strong id="rInteresMes">—</strong></p>
+    <p>Mora acumulada hoy (<span id="rDiasAtraso">0</span> día(s) de atraso): <strong id="rMora">—</strong></p>
+    <p>Total a pagar hoy: <strong id="rTotal" class="verde">—</strong></p>
+    <p>📅 Fecha de caducidad: <strong id="rCaducidad">—</strong></p>
+    <small class="ayuda">La mora sube cada día que pase después de la fecha de caducidad, hasta que marques el préstamo como pagado.</small>
+  </div>
+
+  <button type="submit" class="btn btn-primario">Guardar préstamo</button>
+</form>
+
+<script>
+  const $monto = document.getElementById('monto');
+  const $interes = document.getElementById('interes');
+  const $mora = document.getElementById('mora');
+  const $dias = document.getElementById('dias');
+  const $fechaInicio = document.getElementById('fechaInicio');
+  const $fechaCaducidad = document.getElementById('fechaCaducidad');
+  const $modoDias = document.getElementById('modoDias');
+  const $modoFecha = document.getElementById('modoFecha');
+  const $bloqueDias = document.getElementById('bloqueDias');
+  const $bloqueFecha = document.getElementById('bloqueFecha');
+
+  function fmt(n) {
+    return (Number(n) || 0).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function sumarDias(fecha, dias) {
+    if (!fecha) return null;
+    const d = new Date(fecha + 'T00:00:00');
+    d.setDate(d.getDate() + Number(dias || 0));
+    return d.toISOString().slice(0, 10);
+  }
+  function diasEntre(ini, fin) {
+    if (!ini || !fin) return 0;
+    const a = new Date(ini + 'T00:00:00');
+    const b = new Date(fin + 'T00:00:00');
+    return Math.max(0, Math.round((b - a) / (1000 * 60 * 60 * 24)));
+  }
+
+  function togglePlazo() {
+    if ($modoFecha.checked) {
+      $bloqueDias.style.display = 'none';
+      $bloqueFecha.style.display = '';
+    } else {
+      $bloqueDias.style.display = '';
+      $bloqueFecha.style.display = 'none';
+    }
+    calcular();
+  }
+
+  function calcular() {
+    const monto = Number($monto.value) || 0;
+    const interes = Number($interes.value) || 0;
+    const inicio = $fechaInicio.value;
+
+    let dias, caducidad;
+    if ($modoFecha.checked) {
+      caducidad = $fechaCaducidad.value || null;
+      dias = diasEntre(inicio, caducidad);
+    } else {
+      dias = Number($dias.value) || 0;
+      caducidad = sumarDias(inicio, dias);
+    }
+
+    const mora = Number($mora.value) || 0;
+
+    // Interés normal: 1 mes completo
+    const interesMes = monto * (interes / 100);
+
+    // Días de atraso respecto a HOY
+    const hoy = new Date().toISOString().slice(0, 10);
+    const diasAtraso = caducidad ? diasEntre(caducidad, hoy) : 0;
+
+    // Mora por días de atraso
+    const moraAcum = monto * (mora / 100) * diasAtraso;
+
+    const total = monto + interesMes + moraAcum;
+
+    document.getElementById('rDias').textContent = dias;
+    document.getElementById('rInteresMes').textContent = fmt(interesMes);
+    document.getElementById('rDiasAtraso').textContent = diasAtraso;
+    document.getElementById('rMora').textContent = fmt(moraAcum);
+    document.getElementById('rTotal').textContent = fmt(total);
+    document.getElementById('rCaducidad').textContent = caducidad || '—';
+  }
+
+  document.querySelectorAll('.atajos-dias button').forEach((b) => {
+    b.addEventListener('click', () => {
+      $dias.value = b.getAttribute('data-dias');
+      calcular();
+    });
+  });
+
+  [$monto, $interes, $mora, $dias, $fechaInicio, $fechaCaducidad].forEach((el) => {
+    if (el) el.addEventListener('input', calcular);
+  });
+  [$modoDias, $modoFecha].forEach((el) => el.addEventListener('change', togglePlazo));
+
+  // Si estamos editando, arrancar en modo "fecha exacta" mostrando la caducidad guardada
+  <% if (prestamo) { %>
+    $modoFecha.checked = true;
+    togglePlazo();
+  <% } else { %>
+    calcular();
+  <% } %>
+</script>
+
+<% } %>
+
+<%- include('../partials/footer') %>

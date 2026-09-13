@@ -1,0 +1,78 @@
+<%- include('../partials/header', { titulo: 'Links de registro' }) %>
+
+<div class="cabecera-seccion">
+  <h1>Links de registro</h1>
+  <a href="/clientes" class="btn">← Clientes</a>
+</div>
+
+<div class="bloque">
+  <p>Genera un link único para cada persona que quiera registrarse. Cada link sirve <strong>una sola vez</strong>. Cópialo y envíaselo por WhatsApp.</p>
+  <form action="/links/nuevo" method="POST" class="form-inline">
+    <input type="text" name="etiqueta" placeholder="Etiqueta opcional (ej: para Juan)" />
+    <button type="submit" class="btn btn-primario">+ Generar nuevo link</button>
+  </form>
+</div>
+
+<% if (links.length === 0) { %>
+  <p class="vacio">Aún no has generado links.</p>
+<% } else { %>
+<div class="tabla-scroll">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Etiqueta</th>
+        <th>Estado</th>
+        <th>Cliente registrado</th>
+        <th>Link</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% links.forEach(function(l) { %>
+      <tr>
+        <td><%= l.etiqueta || '—' %></td>
+        <td>
+          <% if (l.usado) { %>
+            <span class="badge badge-estado-pagado">Usado</span>
+          <% } else { %>
+            <span class="badge badge-estado-activo">Pendiente</span>
+          <% } %>
+        </td>
+        <td>
+          <% if (l.clientes) { %>
+            <a href="/clientes/<%= l.clientes.id %>"><%= l.clientes.nombre %></a>
+          <% } else { %>—<% } %>
+        </td>
+        <td>
+          <% if (l.usado) { %>
+            <small class="ayuda">Ya no disponible</small>
+          <% } else { %>
+            <input type="text" class="input-link" value="<%= l.url %>" readonly onclick="this.select()" />
+          <% } %>
+        </td>
+        <td class="acciones">
+          <% if (!l.usado) { %>
+            <button type="button" class="btn btn-sm btn-primario" onclick="copiar('<%= l.url %>', this)">Copiar</button>
+          <% } %>
+          <form action="/links/<%= l.id %>/eliminar" method="POST" onsubmit="return confirm('¿Eliminar este link?');">
+            <button type="submit" class="btn btn-sm btn-peligro">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+
+<script>
+  function copiar(texto, btn) {
+    navigator.clipboard.writeText(texto).then(() => {
+      const original = btn.textContent;
+      btn.textContent = '¡Copiado!';
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    });
+  }
+</script>
+
+<%- include('../partials/footer') %>
