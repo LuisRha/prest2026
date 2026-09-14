@@ -1,0 +1,78 @@
+<%- include('../partials/header', { titulo: 'Mi cuenta' }) %>
+
+<div class="cabecera-seccion">
+  <h1>Hola, <%= cliente.nombres ? cliente.nombres.split(' ')[0] : cliente.nombre %> 👋</h1>
+  <a href="/cliente/solicitar" class="btn btn-primario">+ Solicitar crédito</a>
+</div>
+
+<!-- MIS SOLICITUDES -->
+<section class="bloque">
+  <h2>Mis solicitudes</h2>
+  <% if (solicitudes.length === 0) { %>
+    <p class="vacio">Aún no has hecho solicitudes. Puedes solicitar un crédito con el botón de arriba.</p>
+  <% } else { %>
+  <div class="tabla-scroll">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Monto solicitado</th>
+          <th>Días</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% solicitudes.forEach(function(s) { %>
+        <tr>
+          <td><%= (s.creada_en || '').slice(0,10) %></td>
+          <td><%= formatoDinero(s.monto) %></td>
+          <td><%= s.dias %></td>
+          <td>
+            <% if (s.estado === 'pendiente') { %>
+              <span class="badge badge-por-vencer">Pendiente</span>
+            <% } else if (s.estado === 'aprobada') { %>
+              <span class="badge badge-al-dia">Aprobada</span>
+            <% } else { %>
+              <span class="badge badge-vencido">Rechazada</span>
+            <% } %>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>
+
+<!-- MIS PRÉSTAMOS -->
+<section class="bloque">
+  <h2>Mis préstamos</h2>
+  <% if (prestamos.length === 0) { %>
+    <p class="vacio">No tienes préstamos activos.</p>
+  <% } else { %>
+  <div class="tabla-scroll">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th>Monto</th>
+          <th>Total a pagar</th>
+          <th>Vence</th>
+          <th>Situación</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% prestamos.forEach(function(p) { %>
+        <tr>
+          <td><%= formatoDinero(p.calculo.monto) %></td>
+          <td><strong><%= formatoDinero(p.calculo.totalAPagar) %></strong></td>
+          <td><%= p.fecha_caducidad %></td>
+          <td><span class="badge badge-<%= p.venc.clase %>"><%= p.venc.textoEstado %></span></td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>
+
+<%- include('../partials/footer') %>

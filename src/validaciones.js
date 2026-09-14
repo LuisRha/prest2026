@@ -28,6 +28,8 @@ function validarRegistro(body) {
   const whatsapp = String(body.whatsapp || '').trim();
   const correo = limpiar(body.correo).toLowerCase();
   const direccion = limpiar(body.direccion);
+  const password = String(body.password || '');
+  const password2 = String(body.password2 || '');
 
   // Nombres: obligatorio, solo letras, al menos 2 palabras (dos nombres)
   if (!nombres) {
@@ -72,11 +74,20 @@ function validarRegistro(body) {
     errores.direccion = 'La dirección es demasiado corta.';
   }
 
+  // Contraseña: obligatoria, mínimo 6 caracteres, y debe coincidir la confirmación
+  if (!password) {
+    errores.password = 'Crea una contraseña.';
+  } else if (password.length < 6) {
+    errores.password = 'La contraseña debe tener al menos 6 caracteres.';
+  } else if (password !== password2) {
+    errores.password2 = 'Las contraseñas no coinciden.';
+  }
+
   const valido = Object.keys(errores).length === 0;
   return {
     valido,
     errores,
-    datos: { nombres, apellidos, whatsapp, correo, direccion },
+    datos: { nombres, apellidos, whatsapp, correo, direccion, password },
   };
 }
 

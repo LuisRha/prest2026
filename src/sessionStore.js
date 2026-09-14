@@ -3,7 +3,7 @@
 // Compatible con express-session. Necesario para Vercel/serverless,
 // donde la memoria no persiste entre peticiones.
 // ============================================
-const supabase = require('./supabase');
+const { supabase } = require('./supabase');
 
 module.exports = function (session) {
   const Store = session.Store;

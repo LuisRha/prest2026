@@ -7,18 +7,32 @@
   <link rel="stylesheet" href="/css/estilos.css" />
 </head>
 <body>
-  <% if (typeof sesion !== 'undefined' && sesion) { %>
-  <nav class="navbar">
-    <div class="nav-marca">💰 Préstamos</div>
-    <div class="nav-links">
-      <a href="/">Inicio</a>
-      <a href="/clientes">Clientes</a>
-      <a href="/prestamos">Préstamos</a>
-      <a href="/links">Links registro</a>
-      <form action="/logout" method="POST" class="nav-logout">
-        <button type="submit" class="btn-link">Salir (<%= sesion.usuario %>)</button>
-      </form>
-    </div>
-  </nav>
+  <% if (typeof usuario !== 'undefined' && usuario) { %>
+    <% if (usuario.rol === 'admin') { %>
+    <nav class="navbar">
+      <div class="nav-marca">💰 Préstamos</div>
+      <div class="nav-links">
+        <a href="/">Inicio</a>
+        <a href="/clientes">Clientes</a>
+        <a href="/prestamos">Préstamos</a>
+        <a href="/solicitudes">Solicitudes</a>
+        <a href="/links">Links registro</a>
+        <form action="/logout" method="POST" class="nav-logout">
+          <button type="submit" class="btn-link">Salir (<%= usuario.nombre %>)</button>
+        </form>
+      </div>
+    </nav>
+    <% } else { %>
+    <nav class="navbar navbar-cliente">
+      <div class="nav-marca">💰 Mi cuenta</div>
+      <div class="nav-links">
+        <a href="/cliente">Inicio</a>
+        <a href="/cliente/solicitar">Solicitar crédito</a>
+        <form action="/logout" method="POST" class="nav-logout">
+          <button type="submit" class="btn-link">Salir (<%= usuario.nombre %>)</button>
+        </form>
+      </div>
+    </nav>
+    <% } %>
   <% } %>
   <main class="contenedor">

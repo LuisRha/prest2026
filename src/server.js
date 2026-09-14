@@ -6,7 +6,7 @@ const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
 
-const supabase = require('./supabase');
+const { supabase, configOk } = require('./supabase');
 const {
   formatoDinero,
   calcularPrestamo,
@@ -31,6 +31,22 @@ app.set('views', path.join(__dirname, 'views'));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
+
+// Si faltan las variables de Supabase, mostramos un aviso claro en vez de
+// crashear (útil al configurar Vercel). Se corta aquí antes de usar la sesión.
+if (!configOk) {
+  app.use((req, res) => {
+    res
+      .status(500)
+      .send(
+        '<h2>Falta configuración</h2>' +
+          '<p>La app no encuentra las variables <b>SUPABASE_URL</b> y/o <b>SUPABASE_SERVICE_ROLE_KEY</b>.</p>' +
+          '<p>Ve a Vercel → Settings → Environment Variables, agrégalas para <b>Production</b>, y haz <b>Redeploy</b>.</p>'
+      );
+  });
+  module.exports = app;
+  return;
+}
 
 // En producción (Vercel, Render, etc.) la app corre detrás de un proxy HTTPS.
 // Esto permite que las cookies "secure" funcionen correctamente.
@@ -59,48 +75,91 @@ app.use(
 // Variables disponibles en todas las vistas
 app.use((req, res, next) => {
   res.locals.formatoDinero = formatoDinero;
-  res.locals.sesion = req.session.admin || null;
+  res.locals.usuario = req.session.usuario || null; // { id, nombre, rol }
   next();
 });
 
 // ============================================
-// Autenticación (Opción A: usuario + contraseña del .env)
+// Autenticación por base de datos con roles (admin | cliente)
+// Login único: según el rol, se dirige al panel admin o al portal cliente.
+// El identificador de inicio de sesión es el WhatsApp (telefono).
 // ============================================
-const ADMIN_USUARIO = process.env.ADMIN_USUARIO || 'admin';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
 
-function requiereLogin(req, res, next) {
-  if (req.session && req.session.admin) return next();
+// Normaliza a solo dígitos para comparar el WhatsApp de forma consistente
+function soloDigitos(v) {
+  return String(v || '').replace(/\D/g, '');
+}
+
+// Middleware: exige haber iniciado sesión (cualquier rol)
+function requiereSesion(req, res, next) {
+  if (req.session && req.session.usuario) return next();
   return res.redirect('/login');
 }
 
-// Comparación en tiempo constante (evita ataques de medición de tiempo)
-function comparaSeguro(a, b) {
-  const ba = Buffer.from(String(a));
-  const bb = Buffer.from(String(b));
-  if (ba.length !== bb.length) return false;
-  return crypto.timingSafeEqual(ba, bb);
+// Middleware: exige rol admin
+function requiereAdmin(req, res, next) {
+  if (req.session && req.session.usuario && req.session.usuario.rol === 'admin') return next();
+  if (req.session && req.session.usuario) return res.redirect('/cliente'); // es cliente
+  return res.redirect('/login');
+}
+
+// Middleware: exige rol cliente
+function requiereCliente(req, res, next) {
+  if (req.session && req.session.usuario && req.session.usuario.rol === 'cliente') return next();
+  if (req.session && req.session.usuario) return res.redirect('/'); // es admin
+  return res.redirect('/login');
 }
 
 app.get('/login', (req, res) => {
-  if (req.session.admin) return res.redirect('/');
+  if (req.session.usuario) {
+    return res.redirect(req.session.usuario.rol === 'admin' ? '/' : '/cliente');
+  }
   res.render('login', { error: null });
 });
 
-app.post('/login', (req, res) => {
-  const { usuario, password } = req.body;
-  const okUsuario = comparaSeguro(usuario || '', ADMIN_USUARIO);
-  const okPassword = comparaSeguro(password || '', ADMIN_PASSWORD);
-  if (okUsuario && okPassword) {
-    req.session.admin = { usuario: ADMIN_USUARIO };
-    return res.redirect('/');
+app.post('/login', async (req, res, next) => {
+  try {
+    const whatsapp = soloDigitos(req.body.usuario);
+    const password = String(req.body.password || '');
+
+    if (!whatsapp || !password) {
+      return res.render('login', { error: 'Ingresa tu WhatsApp y contraseña.' });
+    }
+
+    // Buscar por telefono (guardado como dígitos)
+    const { data: cliente, error } = await supabase
+      .from('clientes')
+      .select('*')
+      .eq('telefono', whatsapp)
+      .maybeSingle();
+    if (error) throw error;
+
+    if (!cliente || !cliente.password_hash) {
+      return res.render('login', { error: 'WhatsApp o contraseña incorrectos.' });
+    }
+
+    const ok = await bcrypt.compare(password, cliente.password_hash);
+    if (!ok) {
+      return res.render('login', { error: 'WhatsApp o contraseña incorrectos.' });
+    }
+
+    req.session.usuario = {
+      id: cliente.id,
+      nombre: cliente.nombres || cliente.nombre || 'Usuario',
+      rol: cliente.rol || 'cliente',
+    };
+    return res.redirect(req.session.usuario.rol === 'admin' ? '/' : '/cliente');
+  } catch (err) {
+    next(err);
   }
-  res.render('login', { error: 'Usuario o contraseña incorrectos.' });
 });
 
 app.post('/logout', (req, res) => {
   req.session.destroy(() => res.redirect('/login'));
 });
+
+// Alias para mantener compatibilidad con las rutas del admin ya escritas
+const requiereLogin = requiereAdmin;
 
 // ============================================
 // Dashboard (con alertas de vencimiento)
@@ -528,6 +587,23 @@ app.post('/registro/:token', async (req, res, next) => {
       });
     }
 
+    // ¿Ya existe un cliente con ese WhatsApp? (el telefono es único)
+    const { data: existente } = await supabase
+      .from('clientes')
+      .select('id')
+      .eq('telefono', datos.whatsapp)
+      .maybeSingle();
+    if (existente) {
+      return res.status(400).render('registro/form', {
+        token: req.params.token,
+        errores: { whatsapp: 'Ya existe una cuenta con ese WhatsApp. Inicia sesión.' },
+        datos,
+      });
+    }
+
+    // Hash de la contraseña (nunca se guarda en texto plano)
+    const passwordHash = await bcrypt.hash(datos.password, 10);
+
     // Crear el cliente. Llenamos nombre (combinado) para compatibilidad.
     const nombreCompleto = `${datos.nombres} ${datos.apellidos}`;
     const { data: cliente, error: e1 } = await supabase
@@ -540,6 +616,8 @@ app.post('/registro/:token', async (req, res, next) => {
           telefono: datos.whatsapp,
           correo: datos.correo,
           direccion: datos.direccion,
+          password_hash: passwordHash,
+          rol: 'cliente',
         },
       ])
       .select()
@@ -554,6 +632,183 @@ app.post('/registro/:token', async (req, res, next) => {
     if (e2) throw e2;
 
     res.render('registro/gracias', { nombres: datos.nombres });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ============================================
+// PORTAL DEL CLIENTE (rol cliente)
+// ============================================
+app.get('/cliente', requiereCliente, async (req, res, next) => {
+  try {
+    const cid = req.session.usuario.id;
+
+    const { data: cliente, error: e0 } = await supabase
+      .from('clientes')
+      .select('*')
+      .eq('id', cid)
+      .single();
+    if (e0) throw e0;
+
+    // Solicitudes del cliente
+    const { data: solicitudes, error: e1 } = await supabase
+      .from('solicitudes')
+      .select('*')
+      .eq('cliente_id', cid)
+      .order('creada_en', { ascending: false });
+    if (e1) throw e1;
+
+    // Préstamos del cliente
+    const { data: prestamos, error: e2 } = await supabase
+      .from('prestamos')
+      .select('*')
+      .eq('cliente_id', cid)
+      .order('fecha_caducidad', { ascending: true });
+    if (e2) throw e2;
+
+    const prestamosCalc = (prestamos || []).map((p) => {
+      const calculo = calcularPrestamo(p);
+      const venc = estadoVencimiento(p.fecha_caducidad);
+      return { ...p, calculo, venc };
+    });
+
+    res.render('cliente/inicio', {
+      cliente,
+      solicitudes: solicitudes || [],
+      prestamos: prestamosCalc,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get('/cliente/solicitar', requiereCliente, (req, res) => {
+  res.render('cliente/solicitar', { error: null, datos: {} });
+});
+
+app.post('/cliente/solicitar', requiereCliente, async (req, res, next) => {
+  try {
+    const monto = Number(req.body.monto);
+    const dias = parseInt(req.body.dias, 10);
+    const nota = (req.body.nota_cliente || '').trim() || null;
+
+    if (!monto || monto <= 0 || !dias || dias <= 0) {
+      return res.render('cliente/solicitar', {
+        error: 'Ingresa un monto y una cantidad de días válidos.',
+        datos: req.body,
+      });
+    }
+
+    const { error } = await supabase.from('solicitudes').insert([
+      {
+        cliente_id: req.session.usuario.id,
+        monto,
+        dias,
+        estado: 'pendiente',
+        nota_cliente: nota,
+      },
+    ]);
+    if (error) throw error;
+    res.redirect('/cliente');
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ============================================
+// SOLICITUDES (panel admin): aprobar / rechazar
+// ============================================
+app.get('/solicitudes', requiereAdmin, async (req, res, next) => {
+  try {
+    const { data, error } = await supabase
+      .from('solicitudes')
+      .select('*, clientes(id, nombre, telefono)')
+      .order('creada_en', { ascending: false });
+    if (error) throw error;
+    res.render('solicitudes/lista', { solicitudes: data || [] });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Muestra el formulario para aprobar (poner interés y mora)
+app.get('/solicitudes/:id/aprobar', requiereAdmin, async (req, res, next) => {
+  try {
+    const { data: sol, error } = await supabase
+      .from('solicitudes')
+      .select('*, clientes(id, nombre, telefono)')
+      .eq('id', req.params.id)
+      .single();
+    if (error) throw error;
+    res.render('solicitudes/aprobar', { sol, error: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Procesa la aprobación: crea el préstamo real con interés/mora del admin
+app.post('/solicitudes/:id/aprobar', requiereAdmin, async (req, res, next) => {
+  try {
+    const { data: sol, error: e0 } = await supabase
+      .from('solicitudes')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
+    if (e0) throw e0;
+    if (sol.estado !== 'pendiente') {
+      return res.redirect('/solicitudes');
+    }
+
+    const interesMensual = Number(req.body.interes_mensual) || 0;
+    const moraDiaria = Number(req.body.mora_diaria) || 0;
+    const fechaInicio = new Date().toISOString().slice(0, 10);
+    const fechaCaducidad = sumarDias(fechaInicio, sol.dias);
+
+    // Crear el préstamo real
+    const { data: prestamo, error: e1 } = await supabase
+      .from('prestamos')
+      .insert([
+        {
+          cliente_id: sol.cliente_id,
+          monto: Number(sol.monto),
+          interes_mensual: interesMensual,
+          mora_diaria: moraDiaria,
+          fecha_inicio: fechaInicio,
+          fecha_caducidad: fechaCaducidad,
+          estado: 'activo',
+          notas: 'Aprobado desde solicitud #' + sol.id,
+        },
+      ])
+      .select()
+      .single();
+    if (e1) throw e1;
+
+    // Marcar la solicitud como aprobada
+    const { error: e2 } = await supabase
+      .from('solicitudes')
+      .update({
+        estado: 'aprobada',
+        prestamo_id: prestamo.id,
+        resuelta_en: new Date().toISOString(),
+      })
+      .eq('id', sol.id);
+    if (e2) throw e2;
+
+    res.redirect('/solicitudes');
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/solicitudes/:id/rechazar', requiereAdmin, async (req, res, next) => {
+  try {
+    const { error } = await supabase
+      .from('solicitudes')
+      .update({ estado: 'rechazada', resuelta_en: new Date().toISOString() })
+      .eq('id', req.params.id);
+    if (error) throw error;
+    res.redirect('/solicitudes');
   } catch (err) {
     next(err);
   }
@@ -577,17 +832,11 @@ app.use((err, req, res, next) => {
 
 // Avisos de seguridad al arrancar
 function avisosSeguridad() {
-  const avisos = [];
-  if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.includes('cambia-esto')) {
-    avisos.push('SESSION_SECRET tiene el valor por defecto. Cámbialo por una frase larga y única.');
-  }
-  if (ADMIN_PASSWORD === 'admin' || ADMIN_PASSWORD === 'Prestamos2026') {
-    avisos.push('La contraseña de admin es la de ejemplo. Cámbiala en el .env antes de publicar.');
-  }
-  if (enProduccion && avisos.length) {
-    console.warn('\n[SEGURIDAD] Revisa lo siguiente antes de exponer la app a internet:');
-    avisos.forEach((a) => console.warn('  - ' + a));
-    console.warn('');
+  if (
+    enProduccion &&
+    (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.includes('cambia-esto'))
+  ) {
+    console.warn('\n[SEGURIDAD] SESSION_SECRET tiene el valor por defecto. Cámbialo por una frase larga y única.\n');
   }
 }
 
@@ -596,8 +845,7 @@ function avisosSeguridad() {
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`\n✅ App de préstamos corriendo en: http://localhost:${PORT}`);
-    console.log(`   Usuario admin: ${ADMIN_USUARIO}`);
-    console.log(`   (Puedes cambiar usuario/contraseña en el archivo .env)\n`);
+    console.log(`   Login: usa el WhatsApp y contraseña de un usuario de la tabla clientes.\n`);
     avisosSeguridad();
   });
 }

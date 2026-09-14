@@ -1,0 +1,89 @@
+<%- include('../partials/header', { titulo: 'Solicitudes' }) %>
+
+<div class="cabecera-seccion">
+  <h1>Solicitudes de crédito</h1>
+</div>
+
+<% 
+  var pendientes = solicitudes.filter(function(s){ return s.estado === 'pendiente'; });
+  var resueltas = solicitudes.filter(function(s){ return s.estado !== 'pendiente'; });
+%>
+
+<section class="bloque">
+  <h2 class="titulo-alerta naranja">🔔 Pendientes (<%= pendientes.length %>)</h2>
+  <% if (pendientes.length === 0) { %>
+    <p class="vacio">No hay solicitudes pendientes.</p>
+  <% } else { %>
+  <div class="tabla-scroll">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Cliente</th>
+          <th>Monto</th>
+          <th>Días</th>
+          <th>Nota</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% pendientes.forEach(function(s) { %>
+        <tr>
+          <td><%= (s.creada_en || '').slice(0,10) %></td>
+          <td><a href="/clientes/<%= s.clientes.id %>"><%= s.clientes.nombre %></a></td>
+          <td><%= formatoDinero(s.monto) %></td>
+          <td><%= s.dias %></td>
+          <td><%= s.nota_cliente || '—' %></td>
+          <td class="acciones">
+            <a href="/solicitudes/<%= s.id %>/aprobar" class="btn btn-sm btn-ok">Aprobar</a>
+            <form action="/solicitudes/<%= s.id %>/rechazar" method="POST" onsubmit="return confirm('¿Rechazar esta solicitud?');">
+              <button type="submit" class="btn btn-sm btn-peligro">Rechazar</button>
+            </form>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>
+
+<section class="bloque">
+  <h2>Historial</h2>
+  <% if (resueltas.length === 0) { %>
+    <p class="vacio">Sin solicitudes resueltas todavía.</p>
+  <% } else { %>
+  <div class="tabla-scroll">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Cliente</th>
+          <th>Monto</th>
+          <th>Días</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% resueltas.forEach(function(s) { %>
+        <tr>
+          <td><%= (s.creada_en || '').slice(0,10) %></td>
+          <td><a href="/clientes/<%= s.clientes.id %>"><%= s.clientes.nombre %></a></td>
+          <td><%= formatoDinero(s.monto) %></td>
+          <td><%= s.dias %></td>
+          <td>
+            <% if (s.estado === 'aprobada') { %>
+              <span class="badge badge-al-dia">Aprobada</span>
+            <% } else { %>
+              <span class="badge badge-vencido">Rechazada</span>
+            <% } %>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>
+
+<%- include('../partials/footer') %>

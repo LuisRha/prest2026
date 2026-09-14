@@ -1,0 +1,32 @@
+<%- include('../partials/header', { titulo: 'Aprobar solicitud' }) %>
+
+<div class="cabecera-seccion">
+  <h1>Aprobar solicitud</h1>
+  <a href="/solicitudes" class="btn">← Volver</a>
+</div>
+
+<% if (error) { %>
+  <div class="alerta alerta-error"><%= error %></div>
+<% } %>
+
+<div class="ficha">
+  <p><strong>Cliente:</strong> <%= sol.clientes.nombre %></p>
+  <p><strong>WhatsApp:</strong> <%= sol.clientes.telefono %></p>
+  <p><strong>Monto solicitado:</strong> <%= formatoDinero(sol.monto) %></p>
+  <p><strong>Plazo:</strong> <%= sol.dias %> día(s)</p>
+  <% if (sol.nota_cliente) { %><p><strong>Nota del cliente:</strong> <%= sol.nota_cliente %></p><% } %>
+</div>
+
+<form action="/solicitudes/<%= sol.id %>/aprobar" method="POST" class="form form-ancho">
+  <p>Define las condiciones del préstamo. Al aprobar se creará el préstamo activo automáticamente.</p>
+
+  <label>Interés mensual (%) *</label>
+  <input type="number" step="0.01" min="0" name="interes_mensual" value="10" required />
+
+  <label>Mora diaria (%) *</label>
+  <input type="number" step="0.01" min="0" name="mora_diaria" value="1" required />
+
+  <button type="submit" class="btn btn-primario">Aprobar y crear préstamo</button>
+</form>
+
+<%- include('../partials/footer') %>

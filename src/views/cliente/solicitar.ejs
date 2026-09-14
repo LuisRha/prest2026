@@ -1,0 +1,30 @@
+<%- include('../partials/header', { titulo: 'Solicitar crédito' }) %>
+
+<div class="cabecera-seccion">
+  <h1>Solicitar crédito</h1>
+  <a href="/cliente" class="btn">← Volver</a>
+</div>
+
+<% if (error) { %>
+  <div class="alerta alerta-error"><%= error %></div>
+<% } %>
+
+<form action="/cliente/solicitar" method="POST" class="form form-ancho">
+  <label>¿Cuánto necesitas? (monto) *</label>
+  <input type="number" step="0.01" min="1" name="monto" value="<%= datos.monto || '' %>" required />
+
+  <label>¿Para cuántos días? *</label>
+  <input type="number" step="1" min="1" name="dias" value="<%= datos.dias || '' %>" required />
+  <small class="ayuda">Ejemplo: 15 días, 30 días, etc.</small>
+
+  <label>Nota (opcional)</label>
+  <textarea name="nota_cliente" rows="2" placeholder="Para qué lo necesitas, etc."><%= datos.nota_cliente || '' %></textarea>
+
+  <div class="resumen-calculo">
+    <p>El administrador revisará tu solicitud y definirá el interés. Te avisará por WhatsApp cuando esté aprobada.</p>
+  </div>
+
+  <button type="submit" class="btn btn-primario">Enviar solicitud</button>
+</form>
+
+<%- include('../partials/footer') %>

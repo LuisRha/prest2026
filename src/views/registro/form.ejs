@@ -34,6 +34,16 @@
       <input type="text" name="direccion" id="direccion" value="<%= datos.direccion || '' %>" required />
       <% if (errores.direccion) { %><small class="error-campo"><%= errores.direccion %></small><% } %>
 
+      <label>Crea una contraseña *</label>
+      <input type="password" name="password" id="password" required />
+      <% if (errores.password) { %><small class="error-campo"><%= errores.password %></small><% } %>
+
+      <label>Repite la contraseña *</label>
+      <input type="password" name="password2" id="password2" required />
+      <% if (errores.password2) { %><small class="error-campo"><%= errores.password2 %></small><% } %>
+
+      <small class="ayuda">Con tu WhatsApp y esta contraseña entrarás a tu cuenta para solicitar créditos.</small>
+
       <button type="submit" class="btn btn-primario btn-bloque">Registrarme</button>
     </form>
   </div>

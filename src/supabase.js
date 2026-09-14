@@ -3,22 +3,25 @@ const { createClient } = require('@supabase/supabase-js');
 const url = process.env.SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!url || !serviceKey) {
-  const msg =
-    'Faltan variables de entorno: SUPABASE_URL y/o SUPABASE_SERVICE_ROLE_KEY. ' +
-    'Configúralas en el panel de Vercel (Settings → Environment Variables) y vuelve a desplegar (Redeploy).';
-  console.error('[ERROR] ' + msg);
-  // En serverless NO usamos process.exit (tumba la función). Lanzamos un error normal.
-  throw new Error(msg);
+// Indica si faltan variables (para mostrar un mensaje claro en vez de crashear).
+const configOk = Boolean(url && serviceKey);
+
+if (!configOk) {
+  console.error(
+    '[ERROR] Faltan variables de entorno SUPABASE_URL y/o SUPABASE_SERVICE_ROLE_KEY. ' +
+      'Configúralas en Vercel (Settings -> Environment Variables) y haz Redeploy.'
+  );
 }
 
-// Cliente con service_role: acceso completo desde el servidor.
-// NUNCA se expone al navegador.
-const supabase = createClient(url, serviceKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-  },
-});
+// Creamos el cliente solo si hay configuración. Si no, queda null y las rutas
+// mostrarán un aviso claro (la función NO se cae en seco).
+const supabase = configOk
+  ? createClient(url, serviceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    })
+  : null;
 
-module.exports = supabase;
+module.exports = { supabase, configOk };
