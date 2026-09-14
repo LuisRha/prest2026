@@ -162,6 +162,54 @@ app.post('/logout', (req, res) => {
 const requiereLogin = requiereAdmin;
 
 // ============================================
+// CAMBIAR CONTRASEÑA (admin o cliente, su propia cuenta)
+// ============================================
+app.get('/password', requiereSesion, (req, res) => {
+  res.render('password', { error: null, ok: false });
+});
+
+app.post('/password', requiereSesion, async (req, res, next) => {
+  try {
+    const actual = String(req.body.actual || '');
+    const nueva = String(req.body.nueva || '');
+    const nueva2 = String(req.body.nueva2 || '');
+
+    if (!actual || !nueva) {
+      return res.render('password', { error: 'Completa todos los campos.', ok: false });
+    }
+    if (nueva.length < 6) {
+      return res.render('password', { error: 'La nueva contraseña debe tener al menos 6 caracteres.', ok: false });
+    }
+    if (nueva !== nueva2) {
+      return res.render('password', { error: 'Las contraseñas nuevas no coinciden.', ok: false });
+    }
+
+    const { data: cliente, error } = await supabase
+      .from('clientes')
+      .select('id, password_hash')
+      .eq('id', req.session.usuario.id)
+      .single();
+    if (error) throw error;
+
+    const ok = await bcrypt.compare(actual, cliente.password_hash || '');
+    if (!ok) {
+      return res.render('password', { error: 'La contraseña actual es incorrecta.', ok: false });
+    }
+
+    const nuevoHash = await bcrypt.hash(nueva, 10);
+    const { error: e2 } = await supabase
+      .from('clientes')
+      .update({ password_hash: nuevoHash })
+      .eq('id', cliente.id);
+    if (e2) throw e2;
+
+    res.render('password', { error: null, ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ============================================
 // Dashboard (con alertas de vencimiento)
 // ============================================
 app.get('/', requiereLogin, async (req, res, next) => {
