@@ -4,8 +4,12 @@ const url = process.env.SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!url || !serviceKey) {
-  console.error('\n[ERROR] Faltan SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY en el archivo .env\n');
-  process.exit(1);
+  const msg =
+    'Faltan variables de entorno: SUPABASE_URL y/o SUPABASE_SERVICE_ROLE_KEY. ' +
+    'Configúralas en el panel de Vercel (Settings → Environment Variables) y vuelve a desplegar (Redeploy).';
+  console.error('[ERROR] ' + msg);
+  // En serverless NO usamos process.exit (tumba la función). Lanzamos un error normal.
+  throw new Error(msg);
 }
 
 // Cliente con service_role: acceso completo desde el servidor.
