@@ -119,28 +119,28 @@ app.get('/login', (req, res) => {
 
 app.post('/login', async (req, res, next) => {
   try {
-    const whatsapp = soloDigitos(req.body.usuario);
+    const correo = String(req.body.usuario || '').trim().toLowerCase();
     const password = String(req.body.password || '');
 
-    if (!whatsapp || !password) {
-      return res.render('login', { error: 'Ingresa tu WhatsApp y contraseña.' });
+    if (!correo || !password) {
+      return res.render('login', { error: 'Ingresa tu correo y contraseña.' });
     }
 
-    // Buscar por telefono (guardado como dígitos)
+    // Buscar por correo
     const { data: cliente, error } = await supabase
       .from('clientes')
       .select('*')
-      .eq('telefono', whatsapp)
+      .eq('correo', correo)
       .maybeSingle();
     if (error) throw error;
 
     if (!cliente || !cliente.password_hash) {
-      return res.render('login', { error: 'WhatsApp o contraseña incorrectos.' });
+      return res.render('login', { error: 'Correo o contraseña incorrectos.' });
     }
 
     const ok = await bcrypt.compare(password, cliente.password_hash);
     if (!ok) {
-      return res.render('login', { error: 'WhatsApp o contraseña incorrectos.' });
+      return res.render('login', { error: 'Correo o contraseña incorrectos.' });
     }
 
     req.session.usuario = {

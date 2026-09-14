@@ -2,15 +2,15 @@
 
 <div class="login-caja">
   <h1>💰 Préstamos</h1>
-  <p class="subtitulo">Ingresa con tu WhatsApp y contraseña</p>
+  <p class="subtitulo">Ingresa con tu correo y contraseña</p>
 
   <% if (error) { %>
     <div class="alerta alerta-error"><%= error %></div>
   <% } %>
 
   <form action="/login" method="POST" class="form">
-    <label>WhatsApp (con código de país)</label>
-    <input type="text" name="usuario" inputmode="numeric" placeholder="593987654321" required autofocus />
+    <label>Correo electrónico</label>
+    <input type="email" name="usuario" placeholder="nombre@correo.com" required autofocus />
 
     <label>Contraseña</label>
     <input type="password" name="password" required />
